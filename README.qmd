@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: end -->
 
-The goal of QPanalyseR is to facilitate working with QP data.
+A compedium of functions to facilitate working with Quadros de Pessoal (and other LEED).
 
 ## Installation
 
