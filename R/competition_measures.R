@@ -6,7 +6,7 @@
 #' The first measure is "Out of Sample Hires", from Manchin "Monopsony", 1st chapter.
 #' This measures the proportion of workers hired from outside of the sample.
 #' A low proportion of poaches is an indicator of low competition.
-#' The second measure is the Herfindahl–Hirschman index (HHI) of employment.
+#' The second measure is the Herfindahl Hirschman index (HHI) of employment.
 #' Here, the market share is relative to share of employment,
 #' instead of the typical sales variable.
 #'
@@ -34,15 +34,6 @@
 #'                        year,
 #'                        sector
 #'
-
-# The HHI is computed from the worker share, just sales/profits as the literature recommeds
-# careful: if the group given it's just the sector, the HHI will be for the whole sample,
-# considering the firm over the years... It does not make much sense.
-
-path <- "../2_data/030_final_versions/qp+crosswalks+clean+lags+restrictions.rds"
-df <- readRDS(path)
-
-
 competition_measures <- function(data,
                                  hiring_var,
                                  poach_var,
