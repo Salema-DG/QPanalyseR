@@ -16,8 +16,10 @@
 #' Code:
 #' df <- load_qps("qp+crosswalks+clean+lags+restrictions")
 #' qp_0.1perc_sample <- df %>% dplyr::slice_sample(prop = 0.001)
+#' use_data(qp_0.1perc_sample,
+#'          compress = "xz",
+#'          overwrite = T)
 #'    }
-#'
 #' @examples
 #' data(qp_0.1perc_sample) # lazy loading. The RAM will not be immediately occupied.
 "qp_0.1perc_sample"

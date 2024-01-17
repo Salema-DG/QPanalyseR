@@ -3,7 +3,7 @@ Title: Easily Analyse Quadros de Pessoal Data
 Version: 0.0.0.9000
 Authors@R: 
     person("Miguel", "Salema", , "miguelsalema1999@gmail.com", role = c("aut", "cre"))
-Description: This package has several function that help analyse QP data. 
+Description: This package has several functions that help analyse QP data. 
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

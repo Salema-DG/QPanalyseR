@@ -26,7 +26,7 @@
 #' # load the simple dataset
 #' data(qp_0.1perc_sample)
 #'
-#' qp_0.1perc_sample %>%
+#' qp_0.1perc_sample |>
 #'   competition_measures(hiring,
 #'                        poach,
 #'                        firm,
@@ -40,6 +40,9 @@ competition_measures <- function(data,
                                  firm_var,
                                  wage_var,
                                  ...) {
+
+  # bind names for global variables
+  size <- wage_costs <- share_size <- share_wages <- NULL
 
   # to use hiring_var in filter do:
   # set the condition as a string using englue

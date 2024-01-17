@@ -17,6 +17,9 @@ Data created in-house to use as an example.
 Code:
 df <- load_qps("qp+crosswalks+clean+lags+restrictions")
 qp_0.1perc_sample <- df \%>\% dplyr::slice_sample(prop = 0.001)
+use_data(qp_0.1perc_sample,
+compress = "xz",
+overwrite = T)
 }
 }
 \usage{

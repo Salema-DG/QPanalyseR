@@ -30,14 +30,14 @@ instead of the typical sales variable.
 }
 \examples{
 # load the simple dataset
-df <- load_qps("qp_simple")
+data(qp_0.1perc_sample)
 
-qp_sample |>
-  competition_measures(hiring_var = hiring,
-                       poach_var = poach,
-                       firm_var = firm,
-                       wage_var = total_wage,
+qp_0.1perc_sample |>
+  competition_measures(hiring,
+                       poach,
+                       firm,
+                       total_wage,
                        year,
-                       sector
+                       sector)
 
 }
