@@ -4,7 +4,7 @@
 \alias{load_qps}
 \title{Load QP data}
 \usage{
-load_qps(name, in_linux = T)
+load_qps(name = NULL, in_linux = T)
 }
 \arguments{
 \item{name}{Name of the dataset to load. A strting.}
@@ -18,6 +18,10 @@ A dataset or a list of available datasets, if "name" is left in blank.
 Easily load cleaned QP data.
 }
 \examples{
+# to list available data
+load_qps()
+
+# to load data
 df <- load_qps("qp_simple")
 
 

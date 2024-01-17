@@ -12,16 +12,20 @@
 #' @export
 #'
 #' @examples
+#' # to list available data
+#' load_qps()
+#'
+#' # to load data
 #' df <- load_qps("qp_simple")
 #'
 #'
-load_qps <- function(name,
+load_qps <- function(name = NULL,
                      in_linux = T) {
 
   stopifnot(in_linux == T)
 
   if (in_linux == T) {
-    path <- "../2_data/030_final_versions"
+    path <- "/mnt/vmJoanaShare/QP_stand/2_data/030_final_versions"
   }
 
   if (is.null(name)) {
@@ -30,6 +34,5 @@ load_qps <- function(name,
     return(readRDS(paste0(path, "/", name, ".rds")))
   }
 }
-
 
 

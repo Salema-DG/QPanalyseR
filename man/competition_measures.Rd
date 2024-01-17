@@ -15,6 +15,8 @@ competition_measures(data, hiring_var, poach_var, firm_var, wage_var, ...)
 
 \item{firm_var}{The name of the firm identifier, used for HHI. Not a string.}
 
+\item{wage_var}{The name of the variable with total wages. Not a strinf.}
+
 \item{...}{The grouping to compute competitiveness for. Should contain "year".}
 }
 \description{
@@ -23,13 +25,12 @@ The first measure is "Out of Sample Hires", from Manchin "Monopsony", 1st chapte
 This measures the proportion of workers hired from outside of the sample.
 A low proportion of poaches is an indicator of low competition.
 The second measure is the Herfindahl Hirschman index (HHI) of employment.
-Here, the market share is relative to share of employment,
+Here, the market share is relative to share of employment and wages,
 instead of the typical sales variable.
 }
 \examples{
-
-# to load this data, you must have the peerest package loaded
-data(simul_data)
+# load the simple dataset
+df <- load_qps("qp_simple")
 
 qp_sample |>
   competition_measures(hiring_var = hiring,

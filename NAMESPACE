@@ -2,4 +2,5 @@
 
 export(competition_measures)
 export(load_qps)
+importFrom(magrittr,"%>%")
 importFrom(rlang,":=")

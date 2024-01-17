@@ -1,0 +1,23 @@
+
+#' @title A 0.1% sample of QP
+#'
+#' @description
+#' A sample of 0.1 % of the full cleaned QP with restrictions: "p+crosswalks+clean+lags+restrictions".
+#' The documentation of the variables is not complete.
+#'
+#' @format A data frame with 69466 rows and 68 variables:
+#' \describe{
+#'   \item{\code{worker}}{Worker unique ID.}
+#'   \item{\code{firm}}{Firm unique ID.}
+#'}
+#'
+#' @source {
+#' Data created in-house to use as an example.
+#' Code:
+#' df <- load_qps("qp+crosswalks+clean+lags+restrictions")
+#' qp_0.1perc_sample <- df %>% dplyr::slice_sample(prop = 0.001)
+#'    }
+#'
+#' @examples
+#' data(qp_0.1perc_sample) # lazy loading. The RAM will not be immediately occupied.
+"qp_0.1perc_sample"
