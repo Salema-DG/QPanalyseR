@@ -16,7 +16,7 @@
 #' load_qps()
 #'
 #' # to load data
-#' df <- load_qps("qp_simple")
+#' # df <- load_qps("qp_simple")
 #'
 #'
 load_qps <- function(name = NULL,
