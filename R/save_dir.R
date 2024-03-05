@@ -8,6 +8,8 @@
 #' @param save_ext path
 #' @param latex logical value. Should it be save as a .tex file?
 #'
+#' @export
+#'
 #' @examples
 #' # save_dir(vec1, path_ext)
 #' # save_dir(table1, path_ext, latex = T)
@@ -18,7 +20,7 @@ save_dir <- function(x,
   var_name <- deparse(substitute(x))
 
   if (latex == F) {
-    x %>% write_rds(paste0(save_ext, var_name, ".rds"))
+    x %>% readr::write_rds(paste0(save_ext, var_name, ".rds"))
   } else{
     x %>% write(paste0(save_ext, var_name, ".tex"))
   }
