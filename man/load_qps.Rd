@@ -22,7 +22,7 @@ Easily load cleaned QP data.
 load_qps()
 
 # to load data
-df <- load_qps("qp_simple")
+# df <- load_qps("qp_simple")
 
 
 }
