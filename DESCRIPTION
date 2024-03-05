@@ -12,11 +12,15 @@ Imports:
     data.table,
     dplyr,
     dtplyr,
+    fixest,
     glue,
     lfe,
     magrittr,
     purrr,
+    readr,
     rlang,
+    stringr,
+    tibble,
     tidyr
 Depends: 
     R (>= 2.10)
