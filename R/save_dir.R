@@ -1,5 +1,5 @@
 
-#' @title Easy save of object with the same name as it's object
+#' @title Easy save of object with the same name as its object
 #'
 #' @description facilitate the saving of objects, to perform the sample construction
 #' and the graphic building else where

@@ -2,7 +2,7 @@
 % Please edit documentation in R/save_dir.R
 \name{save_dir}
 \alias{save_dir}
-\title{Easy save of object with the same name as it's object}
+\title{Easy save of object with the same name as its object}
 \usage{
 save_dir(
   x,
