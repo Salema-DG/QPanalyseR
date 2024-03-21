@@ -11,6 +11,8 @@
 #'
 #' @return A tibble with the estiamted FEs.
 #'
+#' @export
+#'
 #' @examples
 #' # df %<>% D_fe(m1)
 #'
