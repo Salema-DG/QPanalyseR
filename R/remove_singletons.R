@@ -65,3 +65,14 @@ remove_singletons <- function(data, ..., iter_max = 1) {
 
   return(data)
 }
+
+
+globalVariables(c("n",
+                  ".data",
+                  "."))
+
+
+
+
+
+

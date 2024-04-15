@@ -75,5 +75,5 @@ D_fe <- function(data, m) {
   return(data)
 }
 
-
+globalVariables(c("value"))
 

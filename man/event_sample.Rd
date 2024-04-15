@@ -7,6 +7,7 @@
 event_sample(
   data,
   outcome_var,
+  time_var,
   event_var,
   unit,
   change_for_event,
@@ -14,19 +15,22 @@ event_sample(
   stable_n_before,
   stable_n_after,
   stability_cond = "both",
+  stability_change,
   ...
 )
 }
 \arguments{
 \item{data}{A tibble}
 
-\item{outcome_var}{Variable where we want to see the impact in}
+\item{outcome_var}{Not a string. Name of the outcome variable.}
 
-\item{event_var}{Variable representing the event shock}
+\item{time_var}{Variable with the period indication. Not a string.}
 
-\item{unit}{Unit of analysis. eg. individual, firm, country}
+\item{event_var}{Variable representing the event shock. Not a string.}
 
-\item{change_for_event}{Change in event_var necessary to classify as event.}
+\item{unit}{Unit of analysis. eg. individual, firm, country. Not a string.}
+
+\item{change_for_event}{Minimum change in event_var necessary to classify as event.}
 
 \item{event_cond}{To be classified as an event, does the change need to be "positive", "negative" or "both"?.}
 
@@ -36,16 +40,24 @@ event_sample(
 
 \item{stability_cond}{Type of stability condition. Can be "event_var", "constant_setting" or "both".}
 
+\item{stability_change}{The maximum change that the outcome variable can have and be called "stable"}
+
 \item{...}{Stability variables. If "constant_setting" or "both" is selected stability_cond, choose which variables warrant such stability.}
 }
 \value{
-If "both" is selected, a column indicating "negative" or positive is also added.
+Returns a tidy dataset with observations that classify as an event. If "both" is selected, a column indicating "negative" or positive is also added.
 }
 \description{
 A function to build a sample for the event study.
 Consider the event is from t = -1 to t=0
 Inspired my Cornelison et al. (2017, AER) event study.
-Note: for now stability_cond = "both" is the only possible condition
+Note: for now, stability_cond = "both" is the only possible condition
+The user can join the data with more outcome variables after the sample is created.
+}
+\examples{
+# example code
+
+
 }
 \author{
 Miguel Salema

@@ -40,7 +40,7 @@ lcs <- function(data, fe1, fe2) {
   # Keep only the largest
   df_cf <- tibble::tibble(cf,
                   {{ fe1 }} := temp %>% dplyr::pull({{ fe1 }})) %>%
-    filter(cf == 1)
+    dplyr::filter(cf == 1)
 
 
   #change in the dataset

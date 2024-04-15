@@ -5,32 +5,35 @@
 #' A function to build a sample for the event study.
 #' Consider the event is from t = -1 to t=0
 #' Inspired my Cornelison et al. (2017, AER) event study.
-#' Note: for now stability_cond = "both" is the only possible condition
-#' The necessity of having the outcome varaible in the function comes from the
-#' fact that we may have the same unit treted twice. In this way, we are sure that
-#' they are counted the same way.
+#' Note: for now, stability_cond = "both" is the only possible condition
+#' The user can join the data with more outcome variables after the sample is created.
 #'
 #'
 #' @param data A tibble
-#' @param outcome_var Variable where we want to see the impact in
-#' @param time_var Variable with the period indication.
-#' @param event_var Variable representing the event shock
-#' @param unit Unit of analysis. eg. individual, firm, country
+#' @param outcome_var Not a string. Name of the outcome variable.
+#' @param time_var Variable with the period indication. Not a string.
+#' @param event_var Variable representing the event shock. Not a string.
+#' @param unit Unit of analysis. eg. individual, firm, country. Not a string.
 #' @param change_for_event Minimum change in event_var necessary to classify as event.
 #' @param event_cond To be classified as an event, does the change need to be "positive", "negative" or "both"?.
 #' @param stable_n_before Number of periods before where stability of the event variable must apply
 #' @param stable_n_after Number of periods after where stability of the event variable must apply
 #' @param stability_cond Type of stability condition. Can be "event_var", "constant_setting" or "both".
-#' @param stability_change The maximum change that the outcome varaible can have and be called "stable"
+#' @param stability_change The maximum change that the outcome variable can have and be called "stable"
 #' @param ... Stability variables. If "constant_setting" or "both" is selected stability_cond, choose which variables warrant such stability.
 #'
-#' @return If "both" is selected, a column indicating "negative" or positive is also added.
+#' @return Returns a tidy dataset with observations that classify as an event. If "both" is selected, a column indicating "negative" or positive is also added.
 #'
 #' @export
 #'
 #' @importFrom magrittr %<>%
+#' @importFrom magrittr %<>%
 #'
 #' @author Miguel Salema
+#'
+#' @examples
+#' # example code
+#'
 #'
 
 event_sample <- function(data,
@@ -43,11 +46,13 @@ event_sample <- function(data,
                          stable_n_before,
                          stable_n_after,
                          stability_cond = "both",
+                         stability_change,
                          ...
                          ) {
 
   # Only possible for now
   stopifnot(stability_cond == "both")
+  stopifnot(event_cond == "both")
 
 
   # Determine the group of stability
@@ -82,7 +87,7 @@ event_sample <- function(data,
 
 
   data %<>%
-    dplyr::mutate(cont = case_when(
+    dplyr::mutate(cont = dplyr::case_when(
       if_all(tidyselect::all_of(c(names_lag_group_id, names_lead_group_id)), ~{.x == group_id}) ~ 1,
       TRUE ~ 0
     ))
@@ -113,7 +118,7 @@ event_sample <- function(data,
   #example, if the year is 2013, y_forward = 3, y_backward = 2, no discontinuity means:
   # that max_lead_year = 2016 and min_lag_year = 2011. Thus, 2016 - 2011 = 3 + 2
   data %<>%
-    mutate(cont2 = case_when(
+    dplyr::mutate(cont2 = dplyr::case_when(
       (max_lead_year - min_lag_year) == (stable_n_after + stable_n_before) ~ 1,
       TRUE ~ 0
     ))
@@ -203,7 +208,7 @@ event_sample <- function(data,
 
   # Drop observations that don't fulfill the condition
   data %<>%
-    filter(event == 1)
+    dplyr::filter(event == 1)
 
   ##############################
   # Step 6: Classify the Event #
@@ -230,125 +235,143 @@ event_sample <- function(data,
       glue::glue("{outcome_var}"),
       "group_id",
       "quality",
-      names_lag_av_peer,
-      names_lead_av_peer,
-      names_lag_res_wage,
-      names_lead_res_wage
+      names_lag_event_var,
+      names_lead_event_var,
+      names_lag_outcome_var,
+      names_lead_outcome_var
     )
 
   data %<>%
-    dplyr::select(all_of(keep_col))
+    dplyr::select(tidyselect::all_of(keep_col))
 
+  # add a unique event id, in case we have several treated units repeated
+  data$event_id <- 1:nrow(data)
 
   # transform the lags into one obs per column
   # goal is to have a column t that is -yearsback to year forward
 
   #standardize av_peer
   data %<>%
-    rename("{event_var}_m0" = {{event_var}},
-           "{outcome_var}_m0" = {{outcome_var}})
+    dplyr::rename("{event_var}_m0" = {{event_var}},
+                  "{outcome_var}_m0" = {{outcome_var}})
 
-  # create a dataframe with the info that does not vary in time, and time
+  # create a dataframe with the info that does not vary in timeplus time itself
   df_aux <- data %>%
-    select(
+    dplyr::select(
       {{unit}},
       {{time_var}},
       group_id,
-      quality)
-
-  # add a unique event id, in case we have several treated units repeated
-  df_aux$event_id <- 1:nrow(df_aux)
+      quality,
+      event_id)
 
 
-    # FIQUEI AQUI!!!!
-
-
-  # I must also use the time_var, not only the worker to identify the evet
+  # I must also use the time_var, not only the worker to identify the event
   # because there might be workers that have more than 1 event
-  df_aux1 <- data %>%
-    select(all_of(c("worker",
-                    "year",
-                    "av_peer_m0",
-                    names_lag_av_peer)
+
+  # Now, I must do 4 pivots:
+  #   - outcome variable forward
+  #   - outcome variable backward
+  #   - event variable forward
+  #   - event variable backward
+
+  # event variable backward
+  df_aux_event_variable_backward  <- data %>%
+    dplyr::select(tidyselect::all_of(
+      c("event_id",
+        glue::glue("{event_var}"),
+        names_lag_event_var)
     )) %>%
-    pivot_longer(!c(worker, year), #coluns not to pivot
-                 names_prefix = "av_peer_m",
+    tidyr::pivot_longer(!c(event_id), #columns not to pivot
+                        names_prefix = glue::glue("{event_var}_m"),
+                        names_to = "t", # these are the columns
+                        values_to = "event_var",
+                        names_transform = list(t = as.numeric)
+    ) %>%
+    dplyr::mutate(t = -t)
+
+  # event variable forward
+  df_aux_event_variable_forward  <- data %>%
+    dplyr::select(tidyselect::all_of(
+      c("event_id",
+        names_lead_event_var
+    )
+    )) %>%
+    tidyr::pivot_longer(!c(event_id), #coluns not to pivot
+                 names_prefix = glue::glue("{event_var}_p"),
                  names_to = "t", # these are the columns
-                 values_to = "av_peer",
+                 values_to = "event_var",
+                 names_transform = list(t = as.numeric)
+    )
+
+  # outcome variable backward
+  df_aux_outcome_variable_backward  <- data %>%
+    dplyr::select(tidyselect::all_of(c("event_id",
+                    glue::glue("{outcome_var}"),
+                    names_lag_outcome_var
+    )
+    )) %>%
+    tidyr::pivot_longer(!c(event_id), #columns not to pivot
+                 names_prefix = glue::glue("{outcome_var}_m"),
+                 names_to = "t", # these are the columns
+                 values_to = "outcome_var",
                  names_transform = list(t = as.numeric)
     ) %>%
-    mutate(t = -t)
+    dplyr::mutate(t = -t)
 
-  df_aux2 <- data %>%
-    select(all_of(c("worker",
-                    "year",
-                    names_lead_av_peer)
+  # outcome variable forward
+  df_aux_outcome_variable_forward  <- data %>%
+    dplyr::select(tidyselect::all_of(c("event_id",
+                    names_lead_outcome_var
+    )
     )) %>%
-    pivot_longer(!c(worker, year), #coluns not to pivot
-                 names_prefix = "av_peer_p",
+    tidyr::pivot_longer(!c(event_id), #coluns not to pivot
+                 names_prefix = glue::glue("{outcome_var}_p"),
                  names_to = "t", # these are the columns
-                 values_to = "av_peer",
+                 values_to = "outcome_var",
                  names_transform = list(t = as.numeric)
     )
 
 
-  df_aux3 <- data %>%
-    select(all_of(c("worker",
-                    "year",
-                    "res_wage_m0",
-                    names_lag_res_wage
-    )))  %>%
-    pivot_longer(!c(worker, year), #coluns not to pivot
-                 names_prefix = "res_wage_m",
-                 names_to = "t", # these are the columns
-                 values_to = "res_wage",
-                 names_transform = list(t = as.numeric)
-    ) %>%
-    mutate(t = -t)
+  # Bind the datasets
+  df_aux_event_variable <-
+    dplyr::bind_rows(
+      df_aux_event_variable_backward,
+      df_aux_event_variable_forward)
 
-  df_aux4 <- data %>%
-    select(all_of(c("worker",
-                    "year",
-                    names_lead_res_wage
-    )))  %>%
-    pivot_longer(!c(worker, year), #coluns not to pivot
-                 names_prefix = "res_wage_p",
-                 names_to = "t", # these are the columns
-                 values_to = "res_wage",
-                 names_transform = list(t = as.numeric)
-    )
+  df_aux_outcome_variable <-
+    dplyr::bind_rows(
+      df_aux_outcome_variable_backward,
+      df_aux_outcome_variable_forward)
 
-  # join the data
 
-  # bind 1 with 2 and 3 with 4 and then join them
-  data <-
-    bind_rows(df_aux1, df_aux2) %>%
-    left_join(
-      bind_rows(df_aux3, df_aux4),
-      by = c("worker", "year", "t")
-    ) %>%
-    left_join(
+  # Join event data with outcome data and with df_aux
+  data_final <- df_aux_event_variable %>%
+    dplyr::left_join(df_aux_outcome_variable,
+              by = c("event_id", "t")) %>%
+    dplyr::left_join(
       df_aux,
-      by = c("worker", "year")
+      by = c("event_id")
     )
 
-
-  # correct the year
-  # year is correct in t == 0
-  data %<>%
-    mutate(year = year + t)
-
+  # the year refers to t == 0
+  # thus, we must correct the year variable
+  data_final %<>%
+    dplyr::mutate({{time_var}} := {{time_var}} + t)
 
   # arrange
-  data %<>%
-    arrange(worker,
-            year)
-
-
+  data_final %<>%
+    dplyr::arrange({{unit}},
+            event_id,
+            {{time_var}})
 
   # return
-  return(data)
+  return(data_final)
 }
 
-
+globalVariables(c("cont",
+                  "cont2",
+                  "event",
+                  "event_id",
+                  "group_id",
+                  "quality"))
 

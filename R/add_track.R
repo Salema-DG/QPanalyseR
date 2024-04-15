@@ -38,4 +38,5 @@ add_track <- function(data,
 
 }
 
+globalVariables(c("df"))
 

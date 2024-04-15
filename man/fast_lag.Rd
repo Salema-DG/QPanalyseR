@@ -34,8 +34,8 @@ vec_n and new_names must have the same size.
 #names <- paste("lead_wage", 1:5, sep="_")
 
 # run the fast lag/lead function
-#df \%<>\% fast_lag(col = wage_lh_real, 
-#                 group = worker, 
+#df \%<>\% fast_lag(col = wage_lh_real,
+#                 group = worker,
 #                 lag_or_lead = "lead",
 #                 vec_n = 1:5,
 #                 new_names = names)
