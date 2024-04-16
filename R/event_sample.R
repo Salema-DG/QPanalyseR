@@ -61,6 +61,7 @@ event_sample <- function(data,
     dplyr::mutate(group_id = dplyr::cur_group_id()) %>%
     dplyr::ungroup()
 
+
   #########################################################################################
   # Step 1: Get a sample of workers that stayed in the same group_id for x years in a row #
   #########################################################################################
@@ -91,6 +92,7 @@ event_sample <- function(data,
       if_all(tidyselect::all_of(c(names_lag_group_id, names_lead_group_id)), ~{.x == group_id}) ~ 1,
       TRUE ~ 0
     ))
+
 
   #-----------------------------------------#
   # keep only the ones that have continuity #
@@ -172,6 +174,7 @@ event_sample <- function(data,
              new_names = names_lead_outcome_var,
              order = {{time_var}})
 
+
   ##################
   # Step 4: FILTER #
   ##################
@@ -180,6 +183,7 @@ event_sample <- function(data,
   data %<>%
     dplyr::filter(cont == 1 & cont2 == 1)
 
+
   ##############################
   # Step 5: Filter º2 #
   ##############################
@@ -187,15 +191,18 @@ event_sample <- function(data,
   # The difference in the event_var must be always below stability_change
   # except from -1 to 0, which should be bigger than change_for_event
 
+  event_var_string <- deparse(substitute(event_var))
+
+
   # expression for the case_when
   filter_expression <-
     paste("abs(",
-          c(names_lag_event_var[-1], names_lead_event_var[-1]),
+          c(names_lag_event_var[length(names_lag_event_var)], names_lead_event_var[length(names_lead_event_var)]),
           "-",
           c(names_lag_event_var[1], names_lead_event_var[1]),
           ") < stability_change",
           collapse = " & ") %>%
-    glue::glue(" & abs(event_var_m1 - {event_var}) > change_for_event & abs(event_var_p1 - {event_var}) < stability_change")
+    stringr::str_glue(" & abs(event_var_m1 - {event_var_string}) > change_for_event & abs(event_var_p1 - {event_var_string}) < stability_change")
 
 
   # Classify an event given the previous conditions
@@ -205,6 +212,7 @@ event_sample <- function(data,
       ~ 1,
       TRUE ~ 0
     ))
+
 
   # Drop observations that don't fulfill the condition
   data %<>%
@@ -217,7 +225,7 @@ event_sample <- function(data,
   # Classify if it's a positive or a negative shock
   data  %<>%
     dplyr::mutate(quality = dplyr::case_when(
-      eval(rlang::parse_expr(glue::glue("-(event_var_m1 - {event_var}) > change_for_event")))
+      eval(rlang::parse_expr(glue::glue("-(event_var_m1 - {event_var_string}) > change_for_event")))
       ~ "positive",
       TRUE ~ "negative"
     ))
@@ -229,10 +237,10 @@ event_sample <- function(data,
 
   # Keep only the columns necessary for the event study
   keep_col <-
-    c(glue::glue("{unit}"),
-      glue::glue("{time_var}"),
-      glue::glue("{event_var}"),
-      glue::glue("{outcome_var}"),
+    c(deparse(substitute(unit)),
+      deparse(substitute(time_var)),
+      deparse(substitute(event_var)),
+      deparse(substitute(outcome_var)),
       "group_id",
       "quality",
       names_lag_event_var,
@@ -240,6 +248,7 @@ event_sample <- function(data,
       names_lag_outcome_var,
       names_lead_outcome_var
     )
+
 
   data %<>%
     dplyr::select(tidyselect::all_of(keep_col))
@@ -252,8 +261,11 @@ event_sample <- function(data,
 
   #standardize av_peer
   data %<>%
-    dplyr::rename("{event_var}_m0" = {{event_var}},
-                  "{outcome_var}_m0" = {{outcome_var}})
+    dplyr::rename("event_var_m0" = {{event_var}},
+                  "outcome_var_m0" = {{outcome_var}})
+
+
+
 
   # create a dataframe with the info that does not vary in timeplus time itself
   df_aux <- data %>%
@@ -278,11 +290,11 @@ event_sample <- function(data,
   df_aux_event_variable_backward  <- data %>%
     dplyr::select(tidyselect::all_of(
       c("event_id",
-        glue::glue("{event_var}"),
+        "event_var_m0",
         names_lag_event_var)
     )) %>%
     tidyr::pivot_longer(!c(event_id), #columns not to pivot
-                        names_prefix = glue::glue("{event_var}_m"),
+                        names_prefix = glue::glue("event_var_m"),
                         names_to = "t", # these are the columns
                         values_to = "event_var",
                         names_transform = list(t = as.numeric)
@@ -297,7 +309,7 @@ event_sample <- function(data,
     )
     )) %>%
     tidyr::pivot_longer(!c(event_id), #coluns not to pivot
-                 names_prefix = glue::glue("{event_var}_p"),
+                 names_prefix = glue::glue("event_var_p"),
                  names_to = "t", # these are the columns
                  values_to = "event_var",
                  names_transform = list(t = as.numeric)
@@ -306,12 +318,12 @@ event_sample <- function(data,
   # outcome variable backward
   df_aux_outcome_variable_backward  <- data %>%
     dplyr::select(tidyselect::all_of(c("event_id",
-                    glue::glue("{outcome_var}"),
+                                       "outcome_var_m0",
                     names_lag_outcome_var
     )
     )) %>%
     tidyr::pivot_longer(!c(event_id), #columns not to pivot
-                 names_prefix = glue::glue("{outcome_var}_m"),
+                 names_prefix = glue::glue("outcome_var_m"),
                  names_to = "t", # these are the columns
                  values_to = "outcome_var",
                  names_transform = list(t = as.numeric)
@@ -325,7 +337,7 @@ event_sample <- function(data,
     )
     )) %>%
     tidyr::pivot_longer(!c(event_id), #coluns not to pivot
-                 names_prefix = glue::glue("{outcome_var}_p"),
+                 names_prefix = glue::glue("outcome_var_p"),
                  names_to = "t", # these are the columns
                  values_to = "outcome_var",
                  names_transform = list(t = as.numeric)
@@ -363,6 +375,13 @@ event_sample <- function(data,
     dplyr::arrange({{unit}},
             event_id,
             {{time_var}})
+
+  # rename to the original names
+  data_final %<>%
+    dplyr::mutate("{{event_var}}" := event_var,
+                  "{{outcome_var}}" := outcome_var) %>%
+    select(-event_var,
+           -outcome_var)
 
   # return
   return(data_final)

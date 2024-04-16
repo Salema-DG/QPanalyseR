@@ -21,15 +21,20 @@
 
 # a DiD within a worker (worker FE)
 
-plot_event_study <- function(data){
+plot_event_study <- function(data,
+                             outcome_vars,
+                             time_var,
+                             unit,
+                             treatment){
 
   # Set the base level as -1
   data %<>%
-    dplyr::mutate("{time_var}" := {{time_var}} %>%
+    dplyr::mutate("{{time_var}}" := {{time_var}} %>%
                     as.factor() %>%
                     forcats::fct_relevel("-1"))
 
-  formula <- glue::glue(" ~ {time_var} | {unit}")
+  formula <- paste0(" ~ ", deparse(substitute(time_var)), " | ", deparse(substitute(unit)))
+
 
   # run the regressions
   # run the regressions
@@ -55,6 +60,8 @@ plot_event_study <- function(data){
   df_plot %<>%
     purrr::reduce(dplyr::bind_rows)
 
+
+
   # -1 is always the reference level
   # Thus, on the coefficients it's always
   time_frame <- data %>%
@@ -74,6 +81,7 @@ plot_event_study <- function(data){
            {{treatment}} := rep(treats, each = length(outcome_vars) * length(time_frame)),
            dp_var = rep(outcome_vars, each = length(time_frame)) %>% rep(times = length(treats)) )
 
+
   # add the intercept
   df_plot <- df_plot %>%
     filter(t != 1000) %>%
@@ -81,9 +89,10 @@ plot_event_study <- function(data){
     bind_rows(
       tibble({{treatment}} := rep(treats, each = length(outcome_vars)),
              dp_var = rep(outcome_vars, times = length(treats)),
-             t = rep(-1, length(time_frame) + 1 ))
+             t = rep("-1", length(time_frame) + 1 ))
     )
 
+  # fill the rest in the -1
   df_plot[is.na(df_plot)] <- 0
 
   return(df_plot)
