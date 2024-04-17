@@ -14,8 +14,18 @@
 #' @param outcome_vars Character vector with outcome variables.
 #' @param treatment It's the treatment variable.
 #'
-#'
 #' @export
+#'
+#' @return A tibble with ready to plot data. The columns are:
+#'
+#'
+#' @examples
+#' # example code
+#' # df_plot_event <- df_event %>%
+#' #   plot_event_study(outcome_vars = c("res_wage", "av_peer"),
+#' #                    time_var = t,
+#' #                    unit = worker,
+#' #                    treatment = quality)
 #'
 
 
@@ -39,7 +49,7 @@ plot_event_study <- function(data,
   # run the regressions
   # run the regressions
   m_event <- data %>%
-    arrange({{treatment}}) %>%
+    dplyr::arrange({{treatment}}) %>%
     split(data %>% dplyr::pull({{treatment}})) %>% # split according to quality
     purrr::map(~{
       c(outcome_vars) %>%
@@ -55,12 +65,10 @@ plot_event_study <- function(data,
         conf.int = TRUE)
 
   df_plot %<>%
-    map(dplyr::bind_rows)
+    purrr::map(dplyr::bind_rows)
 
   df_plot %<>%
     purrr::reduce(dplyr::bind_rows)
-
-
 
   # -1 is always the reference level
   # Thus, on the coefficients it's always
@@ -77,19 +85,19 @@ plot_event_study <- function(data,
     forcats::fct_inorder()
 
   df_plot %<>%
-    mutate({{time_var}} := rep(time_frame, length(outcome_vars) * length(treats)),
-           {{treatment}} := rep(treats, each = length(outcome_vars) * length(time_frame)),
-           dp_var = rep(outcome_vars, each = length(time_frame)) %>% rep(times = length(treats)) )
+    dplyr::mutate({{time_var}} := rep(time_frame, length(outcome_vars) * length(treats)),
+                  {{treatment}} := rep(treats, each = length(outcome_vars) * length(time_frame)),
+                  dp_var = rep(outcome_vars, each = length(time_frame)) %>% rep(times = length(treats)) )
 
 
   # add the intercept
   df_plot <- df_plot %>%
-    filter(t != 1000) %>%
-    select(-term) %>%
-    bind_rows(
-      tibble({{treatment}} := rep(treats, each = length(outcome_vars)),
-             dp_var = rep(outcome_vars, times = length(treats)),
-             t = rep("-1", length(time_frame) + 1 ))
+    dplyr::filter(t != 1000) %>%
+    dplyr::select(-term) %>%
+    dplyr::bind_rows(
+      tibble::tibble({{treatment}} := rep(treats, each = length(outcome_vars)),
+                     dp_var = rep(outcome_vars, times = length(treats)),
+                     t = rep("-1", length(time_frame) + 1 ))
     )
 
   # fill the rest in the -1
@@ -98,3 +106,8 @@ plot_event_study <- function(data,
   return(df_plot)
 
 }
+
+
+globalVariables(c("term"))
+
+

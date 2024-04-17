@@ -380,8 +380,8 @@ event_sample <- function(data,
   data_final %<>%
     dplyr::mutate("{{event_var}}" := event_var,
                   "{{outcome_var}}" := outcome_var) %>%
-    select(-event_var,
-           -outcome_var)
+    dplyr::select(-event_var,
+                  -outcome_var)
 
   # return
   return(data_final)
