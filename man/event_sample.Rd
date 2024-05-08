@@ -16,6 +16,7 @@ event_sample(
   stable_n_after,
   stability_cond = "both",
   stability_change,
+  did = FALSE,
   ...
 )
 }
@@ -41,6 +42,8 @@ event_sample(
 \item{stability_cond}{Type of stability condition. Can be "event_var", "constant_setting" or "both".}
 
 \item{stability_change}{The maximum change that the outcome variable can have and be called "stable"}
+
+\item{did}{Logical value. Default is FALSE. If true, a control group is returned.}
 
 \item{...}{Stability variables. If "constant_setting" or "both" is selected stability_cond, choose which variables warrant such stability.}
 }

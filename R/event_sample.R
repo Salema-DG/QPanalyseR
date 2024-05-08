@@ -20,6 +20,7 @@
 #' @param stable_n_after Number of periods after where stability of the event variable must apply
 #' @param stability_cond Type of stability condition. Can be "event_var", "constant_setting" or "both".
 #' @param stability_change The maximum change that the outcome variable can have and be called "stable"
+#' @param did Logical value. Default is FALSE. If true, a control group is returned.
 #' @param ... Stability variables. If "constant_setting" or "both" is selected stability_cond, choose which variables warrant such stability.
 #'
 #' @return Returns a tidy dataset with observations that classify as an event. If "both" is selected, a column indicating "negative" or positive is also added.
@@ -47,6 +48,7 @@ event_sample <- function(data,
                          stable_n_after,
                          stability_cond = "both",
                          stability_change,
+                         did = FALSE,
                          ...
                          ) {
 
@@ -184,56 +186,107 @@ event_sample <- function(data,
     dplyr::filter(cont == 1 & cont2 == 1)
 
 
-  ##############################
+  #####################
   # Step 5: Filter º2 #
-  ##############################
+  #####################
 
-  # The difference in the event_var must be always below stability_change
-  # except from -1 to 0, which should be bigger than change_for_event
+  # 5.1: Stability: The first differences (FD) of the event_var must
+    # be below stability_change,
+    # except from -1 to 0
+
+
+  # Build filter 5.1
 
   event_var_string <- deparse(substitute(event_var))
 
 
   # expression for the case_when
-  filter_expression <-
+  filter_stability <-
     paste("abs(",
           c(names_lag_event_var[length(names_lag_event_var)], names_lead_event_var[length(names_lead_event_var)]),
           "-",
           c(names_lag_event_var[1], names_lead_event_var[1]),
           ") < stability_change",
           collapse = " & ") %>%
-    stringr::str_glue(" & abs(event_var_m1 - {event_var_string}) > change_for_event & abs(event_var_p1 - {event_var_string}) < stability_change")
+    stringr::str_glue(" & abs(event_var_p1 - {event_var_string}) < stability_change")
 
-
-  # Classify an event given the previous conditions
+  # Apply 5.1: both control and treatment need the stability condition
   data  %<>%
-    dplyr::mutate(event = dplyr::case_when(
-      eval(rlang::parse_expr( filter_expression ))
-      ~ 1,
+    dplyr::mutate(stability = dplyr::case_when(
+      eval(rlang::parse_expr( filter_stability )) ~ 1,
       TRUE ~ 0
     ))
 
-
-  # Drop observations that don't fulfill the condition
   data %<>%
-    dplyr::filter(event == 1)
+    dplyr::filter(stability == 1)
+
+
+  # 5.2: Between t = -1 and t = 0 the FD of event_var must be bigger
+  # then change_for_event for treated ind. and
+  # smaller then stability_change for the control group.
+
+  # Build filter 5.2
+  filter_treat <- stringr::str_glue("abs(event_var_m1 - {event_var_string}) > change_for_event ")
+
+  if (did == T) {
+    filter_control <- stringr::str_glue("abs(event_var_m1 - {event_var_string}) < stability_change ")
+  }
+
+  # Classify an event (or control) given the previous conditions
+  if (did == F) {
+
+    data  %<>%
+      dplyr::mutate(type = dplyr::case_when(
+        eval(rlang::parse_expr( filter_treat )) ~ "treat",
+        TRUE ~ 0
+      ))
+
+    data %<>%
+      dplyr::filter(type == "treat")
+
+  } else{
+
+    data  %<>%
+      dplyr::mutate(type = dplyr::case_when(
+        eval(rlang::parse_expr( filter_treat )) ~ "treat",
+        eval(rlang::parse_expr( filter_control )) ~ "control",
+        TRUE ~ 0
+      ))
+
+    data %<>%
+      dplyr::filter(type %in% c("treat", "control"))
+  }
+
 
   ##############################
   # Step 6: Classify the Event #
   ##############################
 
-  # Classify if it's a positive or a negative shock
-  data  %<>%
-    dplyr::mutate(quality = dplyr::case_when(
-      eval(rlang::parse_expr(glue::glue("-(event_var_m1 - {event_var_string}) > change_for_event")))
-      ~ "positive",
-      TRUE ~ "negative"
-    ))
+  if (did == F) {
+
+    # Classify if it's a positive or a negative shock
+    data  %<>%
+      dplyr::mutate(type = dplyr::case_when(
+        eval(rlang::parse_expr(glue::glue("-(event_var_m1 - {event_var_string}) > change_for_event"))) ~ "positive",
+        TRUE ~ "negative"
+      ))
+
+  } else{
+
+    # Classify if it's a positive or a negative shock
+    data  %<>%
+      dplyr::mutate(type = dplyr::case_when(
+        type == "control" ~ "control",
+        eval(rlang::parse_expr(glue::glue("-(event_var_m1 - {event_var_string}) > change_for_event"))) ~ "positive",
+        TRUE ~ "negative"
+      ))
+
+  }
+
 
   ##############################
   # Step 6: Turn the Data Tidy #
   ##############################
-
 
   # Keep only the columns necessary for the event study
   keep_col <-
@@ -242,13 +295,12 @@ event_sample <- function(data,
       deparse(substitute(event_var)),
       deparse(substitute(outcome_var)),
       "group_id",
-      "quality",
+      "type",
       names_lag_event_var,
       names_lead_event_var,
       names_lag_outcome_var,
       names_lead_outcome_var
     )
-
 
   data %<>%
     dplyr::select(tidyselect::all_of(keep_col))
@@ -264,16 +316,13 @@ event_sample <- function(data,
     dplyr::rename("event_var_m0" = {{event_var}},
                   "outcome_var_m0" = {{outcome_var}})
 
-
-
-
-  # create a dataframe with the info that does not vary in timeplus time itself
+  # create a dataset with the info that does not vary in time plus time itself
   df_aux <- data %>%
     dplyr::select(
       {{unit}},
       {{time_var}},
       group_id,
-      quality,
+      type,
       event_id)
 
 
@@ -392,5 +441,6 @@ globalVariables(c("cont",
                   "event",
                   "event_id",
                   "group_id",
-                  "quality"))
+                  "type",
+                  "stability"))
 
