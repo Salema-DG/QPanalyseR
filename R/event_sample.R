@@ -238,7 +238,7 @@ event_sample <- function(data,
     data  %<>%
       dplyr::mutate(type = dplyr::case_when(
         eval(rlang::parse_expr( filter_treat )) ~ "treat",
-        TRUE ~ 0
+        TRUE ~ "none"
       ))
 
     data %<>%
@@ -250,7 +250,7 @@ event_sample <- function(data,
       dplyr::mutate(type = dplyr::case_when(
         eval(rlang::parse_expr( filter_treat )) ~ "treat",
         eval(rlang::parse_expr( filter_control )) ~ "control",
-        TRUE ~ 0
+        TRUE ~ "none"
       ))
 
     data %<>%
