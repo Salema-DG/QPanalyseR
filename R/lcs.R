@@ -17,8 +17,8 @@
 #' @examples
 #' # Example: AKM
 #' # df %>%
-#' #   lcs(worker,
-#' #       firm)
+#' #   lcs(firm,
+#' #       firm_lag)
 #'
 #'
 #'
