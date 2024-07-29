@@ -16,24 +16,34 @@ layers(data, var_qualif, var_firm, var_year)
 \item{var_year}{A variable with the year. Not a string.}
 }
 \value{
-The same dataset with 2 extra columns: layer (the hierarchical position of the worker) and n_layers (the amount of layers in a firm), both from 0 to 3. The first is at the worker level and the second at the firm level.
+The same dataset with 2 extra columns: layer (the hierarchical position of the worker) and n_layers (the amount of layers in a firm), both from 1 to 4. The first is at the worker level and the second at the firm level.
 }
 \description{
-This function classifies each worker into one of 4 layers.
-Furthermore, it counts how many distinct layers exist by firm in each year.
+This function classifies each worker into one of 4 layers,
+using the variable "qualif" (professional category),
+according to the following table:\tabular{lll}{
+   Layer \tab Qualif \tab Classification \cr
+   4 \tab 1 \tab Top executives (top management) \cr
+   3 \tab 2, 3 \tab Middle management, supervisors, and team leaders \cr
+   2 \tab 4, 5 \tab Higher-skilled professionals \cr
+   1 \tab 6, 7, 8, 9 \tab Semi- and non-skilled professionals \cr
+}
 
-The higher the number, the higher the hierarchical layer.
 
-The function first further aggregates the qualif variable and then
-produces the layers from it.
+However, the translation from qualif to layer is not immediate.
+For the top layer to exist, all other layers must also exist in a firm.
 
-This function follows the classification used in the Oppromola paper
-However, the only difference is regarding qualif==53 | qualif==55.
-Oppromola includes them as layer=0
+Furthermore, the function also
+counts how many distinct layers exist by firm in each year,
+from 1 to 4.
+
+I follow the classification of Caliendo et al. (2020),
+but I do it from 1 to 4, instead of 0 to 3.
+Similarly, I refer to layers and not to layers of management.
+However, the only difference is regarding qualif 53 and qualif 55.
+Caliendo et al. (2020) includes them as layer=0.
 I follow what Martim, Joana and Jaime did and include it as layer = 1.
 This is done due to aggregation limitations, consistent with INE.
-
-In the folder consult_do you can find their stata file.
 }
 \examples{
 
@@ -46,4 +56,7 @@ data("qp_0.1perc_sample")
 
 
 
+}
+\references{
+Caliendo, L., Mion, G., Opromolla, L. D., & Rossi-Hansberg, E. (2020). Productivity and organization in Portuguese firms. Journal of Political Economy, 128(11), 4211-4257.
 }
