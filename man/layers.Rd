@@ -22,6 +22,8 @@ The same dataset with 2 extra columns: layer (the hierarchical position of the w
 This function classifies each worker into one of 4 layers.
 Furthermore, it counts how many distinct layers exist by firm in each year.
 
+The higher the number, the higher the hierarchical layer.
+
 The function first further aggregates the qualif variable and then
 produces the layers from it.
 
@@ -34,8 +36,11 @@ This is done due to aggregation limitations, consistent with INE.
 In the folder consult_do you can find their stata file.
 }
 \examples{
-# df \%>\%
-#   layers(qualif,
+
+data("qp_0.1perc_sample")
+
+# df <- qp_0.1perc_sample \%>\%
+#   layers(qualif_1d,
 #          firm,
 #          year)
 

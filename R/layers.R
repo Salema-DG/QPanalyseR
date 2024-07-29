@@ -5,6 +5,8 @@
 #' This function classifies each worker into one of 4 layers.
 #' Furthermore, it counts how many distinct layers exist by firm in each year.
 #'
+#' The higher the number, the higher the hierarchical layer.
+#'
 #' The function first further aggregates the qualif variable and then
 #' produces the layers from it.
 #'
@@ -26,8 +28,11 @@
 #' @export
 #'
 #' @examples
-#' # df %>%
-#' #   layers(qualif,
+#'
+#' data("qp_0.1perc_sample")
+#'
+#' # df <- qp_0.1perc_sample %>%
+#' #   layers(qualif_1d,
 #' #          firm,
 #' #          year)
 #'
@@ -39,42 +44,56 @@ layers <- function(data,
                    var_firm,
                    var_year) {
 
-  # classify the worker according to hierarchical layer:
+  # Agregate the qualif variable
   data %<>%
     dplyr::mutate(qualif_agreg = dplyr::case_when(
-      {{ var_qualif }} == 1 ~ 3,
-      {{ var_qualif }} == 2 | {{ var_qualif }} == 3 ~ 2,
-      {{ var_qualif }} == 4 | {{ var_qualif }} == 5 ~ 1,
-      {{ var_qualif }} == 6 | {{ var_qualif }} == 7 | {{ var_qualif }} == 8 ~ 0,
+      {{ var_qualif }} == 1 ~ 4,
+      {{ var_qualif }} == 2 | {{ var_qualif }} == 3 ~ 3,
+      {{ var_qualif }} == 4 | {{ var_qualif }} == 5 ~ 2,
+      {{ var_qualif }} == 6 | {{ var_qualif }} == 7 | {{ var_qualif }} == 8 ~ 1,
+      {{ var_qualif }} == 9 ~ 1, # aprendices also bottom layer
       TRUE ~ NA
     ))
 
-
-  # Classify the layers given the existing qualif_agreg
-  # So that the bottom layer of the firm is layer 0
-  # Layer 1 is directly above, and so one
-  # Thus, the only way a worker gets to be layer 3 is to be top layer
-  # in a firm with 4 layers
-
-  # create a list with a vector of unique
-  vec_unique_qualif_agreg <- data %>%
+  # set the group
+  data %<>%
     dplyr::group_by({{var_firm}},
                     {{var_year}}) %>%
-    dplyr::mutate(unique_qualif_agreg = unique(qualif_agreg) %>% sort()) %>%
-    dplyr::pull(unique_qualif_agreg)
-  # sort automatically eliminates NAs
+    dplyr::mutate(id = dplyr::cur_group_id()) %>%
+    dplyr::ungroup()
 
-  # vector with the qualif agreg
-  vec_qualif_agreg <- data %>% dplyr::pull(qualif_agreg)
+  # arrange the data
+  data %<>%
+    dplyr::arrange(id)
 
-  # match them
-  vec_layer <- vec_qualif_agreg %>%
-    purrr::map2(vec_unique_qualif_agreg,
+  # count how many times each group appers
+  nid <- peerest::fast_vec_count(data$id)
+
+  # Classify the layers given the existing qualif_agreg
+  # So that the bottom layer of the firm is layer 1
+  # Layer 1 is directly above, and so one
+  # Thus, the only way a worker gets to be layer 4 is to be top layer
+  # in a firm with 4 layers
+
+  # create a list with a vector of unique qualif_agreg, streched at worker level
+  list_unique_qualif_agreg <- data$qualif_agreg %>%
+    base::split(data$id) %>% #split by the group, in a list
+    purrr::map(unique) %>% # the unique value for each vector of that list
+    purrr::map(~{ # sort the vector, unless it's only made of NAs
+      if (.x %>% is.na() %>% all()) {
+        NA
+      } else {
+        sort(.x)
+      }
+    }) %>%
+    rep(nid)
+
+  # match them (add it to the data)
+  data$layer <- data$qualif_agreg %>%
+    purrr::map2(list_unique_qualif_agreg,
                 match) %>%
     unlist()
 
-  # add id to the data
-  data$layer <- vec_layer
 
   # how many layers in each firm in a given year
   data %<>%
